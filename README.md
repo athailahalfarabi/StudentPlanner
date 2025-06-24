@@ -26,5 +26,5 @@ pisahkan commit backend dan mobile [BACKEND]/[MOBILE]
 
 
 ```bash
-git clone git remote add origin https://github.com/athailahalfarabi/StudentPlanner.git
+git clone https://github.com/athailahalfarabi/StudentPlanner.git
 ```
