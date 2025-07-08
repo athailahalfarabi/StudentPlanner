@@ -1,109 +1,76 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Link, useRouter } from "expo-router";
+import React from "react";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import TaskForm from "../../components/TaskForm";
+
+// Export Task type for reuse
+export type Task = {
+  name: string;
+  deadline: string;
+  [key: string]: any;
+};
 
 export default function AddTask() {
-  const [task, setTask] = useState("");
-  const [deadline, setDeadline] = useState("");
   const router = useRouter();
 
-  const handleAdd = async () => {
-    if (!task.trim()) {
-      Alert.alert("Validation", "Task name cannot be empty!");
+  const handleAdd = async (task: Task) => {
+    if (!task.name.trim()) {
+      Alert.alert("Validasi", "Nama tugas harus diisi!");
       return;
     }
-    try {
-      // Ambil tasks lama
-      const json = await AsyncStorage.getItem("TASKS");
-      const oldTasks = json ? JSON.parse(json) : [];
-      // Tambah task baru
-      const newTasks = [
-        ...oldTasks,
-        { name: task, deadline: deadline }
-      ];
-      await AsyncStorage.setItem("TASKS", JSON.stringify(newTasks));
-      setTask("");
-      setDeadline("");
-      // Navigasi ke halaman view all tasks
-      router.replace("/tasks/view");
-    } catch (e) {
-      Alert.alert("Error", "Failed to save task.");
+    if (!task.deadline || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(task.deadline)) {
+      Alert.alert(
+        "Validasi",
+        "Deadline harus diisi dengan format YYYY-MM-DDTHH:mm (misal: 2025-07-05T14:30)"
+      );
+      return;
     }
+    const json = await AsyncStorage.getItem("TASKS");
+    const oldTasks = json ? JSON.parse(json) : [];
+    const newTasks = [...oldTasks, { ...task, completed: false }];
+    await AsyncStorage.setItem("TASKS", JSON.stringify(newTasks));
+    router.replace("/tasks/view");
   };
 
   return (
     <View style={styles.container}>
-
-      <Text style={styles.title}>Add New Task</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Task name"
-        value={task}
-        onChangeText={setTask}
+      <Link href="/" asChild>
+        <TouchableOpacity style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back to Home</Text>
+        </TouchableOpacity>
+      </Link>
+      <Text style={styles.header}>Tambah Tugas Baru</Text>
+      <TaskForm
+        onSubmit={handleAdd}
+        submitLabel="Tambah Tugas"
+        deadlineLabel="Deadline (contoh: 2025-07-05 14:30)"
+        deadlinePlaceholder="Tahun-Bulan-Hari Jam"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Deadline (e.g. 2025-06-30)"
-        value={deadline}
-        onChangeText={setDeadline}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleAdd}>
-        <Text style={styles.buttonText}>Add Task</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-        <Text style={styles.cancelText}>Cancel</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F6F8FC",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
+  container: { flex: 1, padding: 20, backgroundColor: "#F6F8FC" },
+  backButton: {
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    backgroundColor: "#708A58",
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 16,
   },
-  title: {
-    fontSize: 24,
+  backButtonText: {
+    color: "#333",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  header: {
+    fontSize: 22,
     fontWeight: "bold",
     color: "#708A58",
     marginBottom: 24,
-  },
-  input: {
-    width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#708A58",
-  },
-  button: {
-    backgroundColor: "#708A58",
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 24,
-    marginBottom: 16,
-    width: "100%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  cancelButton: {
-    marginTop: 8,
-    alignItems: "center",
-  },
-  cancelText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
+    textAlign: "center",
   },
 });
